@@ -19,6 +19,7 @@ import com.zbb.weather.bean.FutureWeatherBean;
 import com.zbb.weather.bean.HoursWeatherBean;
 import com.zbb.weather.bean.WeatherBean;
 import com.zbb.weather.service.WeatherService;
+import com.zbb.weather.service.WeatherService.OnParserCallBack;
 import com.zbb.weather.service.WeatherService.WeatherServiceBinder;
 import com.zbb.weather.swiperefresh.PullToRefreshBase;
 import com.zbb.weather.swiperefresh.PullToRefreshBase.OnRefreshListener;
@@ -59,19 +60,19 @@ public class WeatherActivity extends Activity {
 
 	private boolean isRunning = false;
 	private int count = 0;
-	
+
 	private Context mContext;
 	private WeatherService mService;
-	
-	private String TAG ="WeatherActivity";
-	
+
+	private String TAG = "WeatherActivity";
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_weather);
-		mContext = WeatherActivity.this	;
-		//init();
+		mContext = WeatherActivity.this;
+		init();
 		initService();
 		/*
 		 * getCityWeather();
@@ -80,31 +81,54 @@ public class WeatherActivity extends Activity {
 		 * 
 		 * getAQIquality();
 		 */
-		
+
 	}
-	
+
 	private void initService() {
-		
+
 		Log.i(TAG, "initService");
-		Intent intent = new Intent(mContext,WeatherService.class);
+		Intent intent = new Intent(mContext, WeatherService.class);
 		startService(intent);
 		bindService(intent, conn, Context.BIND_AUTO_CREATE);
 	}
-	
+
 	ServiceConnection conn = new ServiceConnection() {
-		
+
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			// TODO Auto-generated method stub
-			
+			mService.removeCallBack();
 		}
-		
+
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			// TODO Auto-generated method stub
 			Log.i(TAG, "onServiceConnected");
-			mService = ((WeatherServiceBinder)service).getService();
+			mService = ((WeatherServiceBinder) service).getService();
 			mService.test();
+			mService.setCallBack(new OnParserCallBack() {
+
+				@Override
+				public void OnParserComplete(AQIqualityBean aqiBean,
+						WeatherBean weatherBean, List<HoursWeatherBean> list) {
+					// TODO Auto-generated method stub
+					mPullToRefreshScrollView.onRefreshComplete();
+					if (list != null & list.size() >= 5) {
+
+						setHourViews(list);
+					}
+
+					if (aqiBean != null) {
+						setAQIView(aqiBean);
+					}
+
+					if (weatherBean != null) {
+						setWeatherViews(weatherBean);
+					}
+				}
+			});
+
+			mService.getCityWeather();
 		}
 	};
 
@@ -246,15 +270,16 @@ public class WeatherActivity extends Activity {
 					}
 
 				});
-		
-		Log.i(TAG,"count = "+count);
-		
-		/*if (count == 3) {
 
-			mPullToRefreshScrollView.onRefreshComplete();
-			isRunning = true;
+		Log.i(TAG, "count = " + count);
 
-		}*/
+		/*
+		 * if (count == 3) {
+		 * 
+		 * mPullToRefreshScrollView.onRefreshComplete(); isRunning = true;
+		 * 
+		 * }
+		 */
 
 	}
 
@@ -537,7 +562,7 @@ public class WeatherActivity extends Activity {
 					public void onRefresh(
 							PullToRefreshBase<ScrollView> refreshView) {
 						// TODO Auto-generated method stub
-						getCityWeather();
+						mService.getCityWeather();
 					}
 				});
 
@@ -596,6 +621,7 @@ public class WeatherActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		unbindService(conn);
+
 	}
-	
+
 }
