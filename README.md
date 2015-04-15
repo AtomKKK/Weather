@@ -7,11 +7,6 @@ Hey! I'm your friend AtomKKK ! This is a weather app .
 ----------
 
 
-Documents
--------------
-
-StackEdit stores your documents in your browser, which means all your documents are automatically saved locally and are accessible **offline!**
-
  **Log:**
  
 - 2014/04/15
